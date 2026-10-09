@@ -183,7 +183,12 @@ function lerEstadoCiclo_(sheet) {
 
   summaryValues.slice(1).forEach(row => {
     const key = String(row[0] || '').trim();
-    if (key) summary[key] = row[1];
+    if (!key) return;
+
+    summary[key] =
+      key === 'current_cycle_id'
+        ? normalizarCycleId_(row[1])
+        : row[1];
   });
 
   if (sheet.getLastColumn() >= 14 && sheet.getLastRow() >= 2) {
@@ -198,7 +203,7 @@ function lerEstadoCiclo_(sheet) {
       .getValues();
 
     detailValues.forEach(row => {
-      const cycleId = String(row[0] || '').trim();
+      const cycleId = normalizarCycleId_(row[0]);
       const cardId = String(row[2] || '').trim();
       if (!cycleId || !cardId) return;
 
@@ -289,6 +294,32 @@ function detectarCicloMaisNovoTrello_(afterCycleId) {
   };
 }
 
+function normalizarCycleId_(value) {
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return Utilities.formatDate(
+      value,
+      'America/Sao_Paulo',
+      'yyyy-MM'
+    );
+  }
+
+  const text = String(value || '').trim();
+
+  const direct = text.match(/^(\d{4})-(\d{2})$/);
+  if (direct) return direct[1] + '-' + direct[2];
+
+  const parsed = new Date(text);
+  if (!isNaN(parsed.getTime())) {
+    return Utilities.formatDate(
+      parsed,
+      'America/Sao_Paulo',
+      'yyyy-MM'
+    );
+  }
+
+  return text;
+}
+
 function extrairNumeroPostCiclo_(name) {
   const m = String(name || '').match(/^\s*POST\s+0?([1-8])\b/i);
   if (!m) return 0;
@@ -332,6 +363,10 @@ function escreverControleCiclo_(sheet, state) {
     ['updated_at', new Date()],
     ['source', state.source || 'AUTO']
   ];
+
+  // Impede o Google Sheets de interpretar "2026-10" como uma data.
+  sheet.getRange('B2').setNumberFormat('@');
+  sheet.getRange('D:D').setNumberFormat('@');
 
   sheet
     .getRange(1, 1, summaryRows.length, 2)
