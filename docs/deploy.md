@@ -113,3 +113,36 @@ Como o Git é a fonte canônica:
 3. o workflow fará novo `clasp push` com a versão anterior.
 
 Antes de habilitar mudanças funcionais relevantes, manter uma baseline do código atualmente em produção.
+
+
+## Trava de baseline
+
+Existe uma proteção adicional: o deploy só acontece quando o arquivo raiz:
+
+```text
+.deploy-enabled
+```
+
+existir no repositório.
+
+Motivo: `clasp push` substitui o conteúdo inteiro do projeto Apps Script remoto. Enquanto o código real de produção não tiver sido completamente importado e auditado, qualquer deploy parcial poderia remover arquivos que ainda existem apenas no Apps Script.
+
+Fluxo inicial:
+
+```text
+importar todos os arquivos reais
+        ↓
+conferir baseline completa
+        ↓
+configurar secrets
+        ↓
+adicionar .deploy-enabled
+        ↓
+primeiro deploy controlado
+        ↓
+deploys seguintes automáticos em push na main
+```
+
+A ausência de `.deploy-enabled` não causa erro: o workflow apenas registra que o deploy está bloqueado.
+
+Não adicionar esse arquivo até que a baseline real esteja completa.
