@@ -1,0 +1,82 @@
+name: Deploy Apps Script
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "src/apps-script/**/*.gs"
+      - "src/apps-script/**/*.html"
+      - "src/apps-script/appsscript.json"
+  workflow_dispatch:
+
+concurrency:
+  group: fagundes-apps-script-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Push to Google Apps Script
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate required files and secrets
+        env:
+          APPS_SCRIPT_ID: ${{ secrets.APPS_SCRIPT_ID }}
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          set -euo pipefail
+
+          if [ ! -f "src/apps-script/appsscript.json" ]; then
+            echo "::error::src/apps-script/appsscript.json não encontrado."
+            exit 1
+          fi
+
+          if [ -z "${APPS_SCRIPT_ID}" ]; then
+            echo "::error::Secret APPS_SCRIPT_ID não configurado."
+            exit 1
+          fi
+
+          if [ -z "${CLASPRC_JSON}" ]; then
+            echo "::error::Secret CLASPRC_JSON não configurado."
+            exit 1
+          fi
+
+      - name: Install clasp
+        run: npm install --global @google/clasp@3.4.1
+
+      - name: Configure clasp project
+        env:
+          APPS_SCRIPT_ID: ${{ secrets.APPS_SCRIPT_ID }}
+        run: |
+          cat > .clasp.json <<EOF
+          {
+            "scriptId": "${APPS_SCRIPT_ID}",
+            "rootDir": "src/apps-script"
+          }
+          EOF
+
+      - name: Configure Google authentication
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          printf '%s' "${CLASPRC_JSON}" > "${HOME}/.clasprc.json"
+          chmod 600 "${HOME}/.clasprc.json"
+
+      - name: Show deploy scope
+        run: clasp status
+
+      - name: Push source to Apps Script
+        run: clasp push --force
