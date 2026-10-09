@@ -1,0 +1,42 @@
+name: Validate Apps Script
+
+on:
+  pull_request:
+    paths:
+      - "src/apps-script/**/*.gs"
+      - "src/apps-script/appsscript.json"
+  push:
+    branches:
+      - "feature/**"
+    paths:
+      - "src/apps-script/**/*.gs"
+      - "src/apps-script/appsscript.json"
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate Apps Script JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          find src/apps-script -type f -name '*.gs' -print0 | while IFS= read -r -d '' file; do
+            cp "$file" /tmp/apps-script-check.js
+            node --check /tmp/apps-script-check.js
+            echo "OK: $file"
+          done
+
+      - name: Validate appsscript.json
+        run: |
+          node -e "JSON.parse(require('fs').readFileSync('src/apps-script/appsscript.json','utf8')); console.log('OK: appsscript.json')"
