@@ -997,6 +997,7 @@ function capturarSnapshotsInstagram() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
   let avaliados = 0;
+
   let criados = 0;
 
 
@@ -1996,6 +1997,7 @@ const ESTRATEGIA_CANONICA_ETAPA3 = {
   '18091159868352918': {c:100, a:70, b:40, s:75, st:70},
 
   '18152584843503532': {c:70, a:55, b:80, s:95, st:80},
+
   '18183345001370812': {c:50, a:75, b:80, s:95, st:80},
 
   '18618958570047995': {c:35, a:75, b:80, s:95, st:60},
@@ -2995,6 +2997,7 @@ function normalizarFormatoEtapa8_(v) {
   if (s.includes('REEL') || s === 'VIDEO') return 'Reel';
 
   if (s.includes('CARROSSEL')) return 'Carrossel';
+
   if (s.includes('CARD') || s.includes('IMAGEM') || s.includes('ÚNICO') || s.includes('UNICO')) return 'Imagem';
 
   return String(v || '');
