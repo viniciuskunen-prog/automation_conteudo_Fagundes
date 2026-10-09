@@ -5,9 +5,9 @@ Repositório canônico do código e das regras operacionais da automação edito
 ## Estado da baseline
 
 **Baseline:** 2026-10-09  
-**Status:** arquitetura definida; código Apps Script real em produção ainda não foi exportado/versionado neste repositório.
+**Status:** baseline real versionada e integração Meta ↔ Trello implementada em 2026-10-09.
 
-Este repositório não deve receber código reconstruído por suposição. A primeira versão dos arquivos Apps Script deve vir do projeto real atualmente em produção.
+A baseline de produção foi importada antes das alterações funcionais. O código passa a ser mantido no Git e sincronizado com o Apps Script via GitHub Actions + clasp.
 
 ## Arquitetura-alvo
 
@@ -106,10 +106,9 @@ Segredos devem permanecer em Script Properties e/ou GitHub Secrets.
 
 ## Próximas etapas
 
-1. Exportar o Apps Script real da Fagundes.
-2. Commitar a baseline real sem alterações funcionais.
-3. Auditar o código em produção contra a arquitetura documentada.
-4. Implementar sincronização determinística Meta ↔ Trello.
-5. Implementar controle de ciclo 6/8 baseado em publicação real.
-6. Testar end-to-end sem movimentação destrutiva.
-7. Configurar `clasp` e GitHub Actions para deploy controlado.
+1. Configurar `TRELLO_API_KEY` e `TRELLO_TOKEN` em Script Properties.
+2. Executar `testarConexaoTrello()`.
+3. Executar `diagnosticarSincronizacaoTrello()` e validar resultado sem movimentação.
+4. Executar `atualizarControleCiclo()` para inicializar outubro/2026.
+5. Validar o primeiro match real Meta → Trello → POSTADOS.
+6. Conectar o executor ChatGPT ao estado `READY` do ciclo.
