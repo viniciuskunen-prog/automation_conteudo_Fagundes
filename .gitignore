@@ -1,0 +1,24 @@
+# Node / clasp
+node_modules/
+.claspignore.local
+.clasprc.json
+.clasprc.*
+!.clasprc.example.json
+
+# Environment / secrets
+.env
+.env.*
+*.pem
+*.key
+credentials.json
+client_secret*.json
+token*.json
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Temporary
+tmp/
+*.log
