@@ -1,4 +1,5 @@
 # Node / clasp
+.clasp.json
 node_modules/
 .claspignore.local
 .clasprc.json
