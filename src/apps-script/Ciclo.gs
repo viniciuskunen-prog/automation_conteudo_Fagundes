@@ -179,7 +179,7 @@ function lerEstadoCiclo_(sheet) {
     return { summary: summary, cards: cards };
   }
 
-  const summaryValues = sheet.getRange('A1:B8').getValues();
+  const summaryValues = sheet.getRange('A1:B9').getValues();
 
   summaryValues.slice(1).forEach(row => {
     const key = String(row[0] || '').trim();
@@ -226,7 +226,8 @@ function detectarCicloInicialTrello_() {
 function detectarCicloMaisNovoTrello_(afterCycleId) {
   const cards = []
     .concat(trelloListarCardsPlanejamento_())
-    .concat(trelloListarCardsPostar_());
+    .concat(trelloListarCardsPostar_())
+    .concat(trelloListarCardsPostados_());
 
   const groups = {};
 
@@ -340,6 +341,11 @@ function escreverControleCiclo_(sheet, state) {
     .getRange(1, 4, 1, FAGUNDES_CICLO.DETAIL_HEADERS.length)
     .setValues([FAGUNDES_CICLO.DETAIL_HEADERS]);
 
+  // IDs do Instagram excedem a precisão numérica segura do Sheets.
+  // Formatar como texto ANTES de escrever evita arredondamento.
+  sheet.getRange('F:F').setNumberFormat('@');
+  sheet.getRange('I:J').setNumberFormat('@');
+
   if (state.cards.length) {
     const now = new Date();
     const detailRows = state.cards.map(card => [
@@ -366,8 +372,6 @@ function escreverControleCiclo_(sheet, state) {
       .setValues(detailRows);
   }
 
-  sheet.getRange('F:F').setNumberFormat('@');
-  sheet.getRange('I:I').setNumberFormat('@');
   sheet.getRange('B7:B8').setNumberFormat('dd/MM/yyyy HH:mm:ss');
   sheet.getRange('H:H').setNumberFormat('dd/MM/yyyy HH:mm:ss');
   sheet.getRange('L:L').setNumberFormat('dd/MM/yyyy HH:mm:ss');
