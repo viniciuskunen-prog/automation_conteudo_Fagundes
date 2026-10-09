@@ -1556,7 +1556,17 @@ function rotinaDiariaFagundes() {
 
   Utilities.sleep(500);
 
+  // A publicação real na Meta é a fonte da verdade operacional.
+  // Sem credenciais Trello, a sincronização registra IGNORADO e a rotina continua.
+  sincronizarPublicacoesComTrello();
+
+  Utilities.sleep(300);
+
   atualizarMotorEditorial();
+
+  Utilities.sleep(300);
+
+  atualizarControleCiclo();
 
 }
 
@@ -2134,13 +2144,13 @@ const TRELLO_AUDITADOS_SEM_CARD_ETAPA8 = {
 
  * Atualiza inteligência editorial e prepara a fila de sincronização com Trello.
 
- * IMPORTANTE: este Apps Script NÃO altera cards do Trello diretamente.
+ * IMPORTANTE: o motor editorial não altera cards do Trello diretamente.
 
  * Ele só marca vínculos únicos e gera o nome padrão:
 
  *   POST XX — IG <post_id>
 
- * A escrita no Trello deve ocorrer somente após validação do vínculo.
+ * A escrita no Trello ocorre em SyncTrello.gs somente após match exato e único.
 
  */
 
@@ -2157,6 +2167,10 @@ function atualizarMotorEditorial() {
   const editorial = getOrCreateSheet_(ss, 'Editorial');
 
   const vinculosTrello = getOrCreateSheet_(ss, 'Vínculos Trello');
+
+  // Lê vínculos seguros antes de reconstruir a visão histórica.
+  // Isso impede que MATCH_LEGENDA_EXATA seja apagado pelo catálogo legado.
+  const vinculosPersistentes = lerVinculosPersistentesEtapa8_(vinculosTrello);
 
 
 
@@ -2450,13 +2464,21 @@ function atualizarMotorEditorial() {
 
 
 
-  escreverTabelaEtapa8_(vinculosTrello, [
+  // Mescla vínculos confirmados criados fora do catálogo histórico,
+  // incluindo os novos vínculos automáticos por legenda.
+  mesclarVinculosPersistentesEtapa8_(
+    vinculoPorPost,
+    vinculoRows,
+    vinculosPersistentes
+  );
 
-    'post_id','card_trello_id','card_trello_url','confianca_vinculo',
 
-    'status_vinculo','nome_trello_padrao','acao','conflita_com_post_ids'
 
-  ], vinculoRows);
+  escreverTabelaEtapa8_(
+    vinculosTrello,
+    FAGUNDES_SYNC.HEADERS,
+    vinculoRows
+  );
 
 
 
@@ -2531,13 +2553,13 @@ function atualizarMotorEditorial() {
     let card = (vt && vt.podeUsar) ? vt.cardId : '';
 
     let sync = !catalogRow
-
-      ? 'NÃO ENCONTRADO NO CATÁLOGO CANÔNICO'
-
+      ? (
+          vt && vt.podeUsar
+            ? 'TRELLO CONFIRMADO / CATÁLOGO PENDENTE'
+            : 'NÃO ENCONTRADO NO CATÁLOGO CANÔNICO'
+        )
       : !vt
-
         ? 'CATÁLOGO CANÔNICO / TRELLO PENDENTE'
-
         : vt.status;
 
 
@@ -2736,11 +2758,17 @@ function atualizarMotorEditorial() {
 
       editorialRows.push([
 
-        id,'',ir[1],fmt,'PENDENTE DE VÍNCULO','','',janela,'',
+        id,card,ir[1],fmt,
+        card ? 'PENDENTE DE CATÁLOGO' : 'PENDENTE DE VÍNCULO',
+        '','',janela,'',
 
-        'SEM CLASSIFICAÇÃO','NÃO CALCULADA','Vincular ao catálogo',
+        'SEM CLASSIFICAÇÃO','NÃO CALCULADA',
+        card ? 'Classificar no catálogo' : 'Vincular ao catálogo',
 
-        idade,'','NÃO','Sem vínculo seguro com card do Trello.'
+        idade,'','NÃO',
+        card
+          ? 'Vínculo Trello confirmado; classificação editorial ainda não catalogada.'
+          : 'Sem vínculo seguro com card do Trello.'
 
       ]);
 
@@ -2912,7 +2940,9 @@ function atualizarMotorEditorial() {
 
     fora_catalogo: insightRows.filter(r => !conteudoPorPost[String(r[0] || '')]).length,
 
-    trello_confirmados_unicos: vinculoRows.filter(r => r[4] === 'CONFIRMADO ÚNICO').length,
+    trello_confirmados_unicos: vinculoRows.filter(r =>
+      String(r[4] || '').toUpperCase().indexOf('CONFIRMADO') === 0
+    ).length,
 
     pendentes_producao: vinculoRows.filter(r => r[4] === 'PENDENTE').length,
 

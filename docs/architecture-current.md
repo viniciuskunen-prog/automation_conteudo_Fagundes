@@ -132,3 +132,73 @@ rotinaDiariaFagundes()
 ```
 
 O nome exato das funções existentes em produção deve ser preservado ou migrado explicitamente após a exportação do código real.
+
+
+## Implementação 2026-10-09
+
+Arquivos ativos:
+
+- `Codigo.gs`: coleta Meta, snapshots, motor editorial e orquestração diária;
+- `Trello.gs`: cliente REST do Trello;
+- `SyncTrello.gs`: match exato caption Meta × bloco LEGENDA do card;
+- `Ciclo.gs`: estado canônico do ciclo 8/8 e gatilho READY em 6/8.
+
+A rotina diária alvo foi implementada como:
+
+```text
+coletarInstagram()
+capturarSnapshotsInstagram()
+sincronizarPublicacoesComTrello()
+atualizarMotorEditorial()
+atualizarControleCiclo()
+```
+
+Se as credenciais Trello não existirem, as duas etapas Trello retornam estado ignorado sem interromper a coleta Meta nem o motor editorial.
+
+### Segurança do match
+
+O match automático exige:
+
+1. legenda normalizada idêntica;
+2. match único entre cards elegíveis;
+3. ausência de conflito `media_id ↔ card_trello_id`;
+4. publicação dentro da janela temporal configurada em relação ao vencimento do card.
+
+Defaults:
+
+- `TRELLO_SYNC_LOOKBACK_DAYS = 60`;
+- `TRELLO_MATCH_MAX_DAYS = 21`.
+
+Ambos podem ser sobrescritos via Script Properties.
+
+### Script Properties Trello
+
+Obrigatórios:
+
+- `TRELLO_API_KEY`;
+- `TRELLO_TOKEN`.
+
+Opcionais:
+
+- `TRELLO_BOARD_ID`;
+- `TRELLO_LIST_PLANEJAMENTO_ID`;
+- `TRELLO_LIST_POSTAR_ID`;
+- `TRELLO_LIST_POSTADOS_ID`;
+- `TRELLO_SYNC_LOOKBACK_DAYS`;
+- `TRELLO_MATCH_MAX_DAYS`.
+
+### Controle Ciclo
+
+A aba `Controle Ciclo` é criada automaticamente quando o Trello estiver configurado.
+
+Ela mantém:
+
+- ciclo atual;
+- total de cards;
+- quantidade publicada;
+- limiar 6;
+- status `EM_ANDAMENTO` ou `READY`;
+- `ready_at`;
+- detalhamento dos 8 cards e seus `media_id`.
+
+Um card conta como publicado somente quando existe vínculo confirmado com uma publicação Meta.
