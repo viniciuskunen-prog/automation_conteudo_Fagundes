@@ -8,6 +8,7 @@ on:
       - "src/apps-script/**/*.gs"
       - "src/apps-script/**/*.html"
       - "src/apps-script/appsscript.json"
+      - ".deploy-enabled"
   workflow_dispatch:
 
 concurrency:
@@ -27,12 +28,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Deployment safety gate
+        id: gate
+        shell: bash
+        run: |
+          if [ -f ".deploy-enabled" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "Deploy habilitado."
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Deploy bloqueado: baseline ainda não marcada como completa."
+          fi
+
       - name: Setup Node.js
+        if: steps.gate.outputs.enabled == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "22"
 
       - name: Validate required files and secrets
+        if: steps.gate.outputs.enabled == 'true'
         env:
           APPS_SCRIPT_ID: ${{ secrets.APPS_SCRIPT_ID }}
           CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
@@ -55,9 +70,11 @@ jobs:
           fi
 
       - name: Install clasp
+        if: steps.gate.outputs.enabled == 'true'
         run: npm install --global @google/clasp@3.4.1
 
       - name: Configure clasp project
+        if: steps.gate.outputs.enabled == 'true'
         env:
           APPS_SCRIPT_ID: ${{ secrets.APPS_SCRIPT_ID }}
         run: |
@@ -69,6 +86,7 @@ jobs:
           EOF
 
       - name: Configure Google authentication
+        if: steps.gate.outputs.enabled == 'true'
         env:
           CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
         run: |
@@ -76,7 +94,9 @@ jobs:
           chmod 600 "${HOME}/.clasprc.json"
 
       - name: Show deploy scope
+        if: steps.gate.outputs.enabled == 'true'
         run: clasp status
 
       - name: Push source to Apps Script
+        if: steps.gate.outputs.enabled == 'true'
         run: clasp push --force
