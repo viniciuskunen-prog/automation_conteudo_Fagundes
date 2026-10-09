@@ -149,6 +149,11 @@ function trelloListarCardsPlanejamento_() {
   return trelloListarCardsDaLista_(cfg.listPlanejamentoId);
 }
 
+function trelloListarCardsPostados_() {
+  const cfg = getTrelloConfig_();
+  return trelloListarCardsDaLista_(cfg.listPostadosId);
+}
+
 function trelloBuscarCard_(cardId) {
   if (!cardId) return null;
 
