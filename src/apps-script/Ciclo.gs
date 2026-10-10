@@ -874,7 +874,7 @@ function escreverControleCiclo_(sheet, state) {
   sheet.getRange('B11:B12').setNumberFormat('dd/MM/yyyy HH:mm:ss');
   sheet.getRange('B14:B15').setNumberFormat('dd/MM/yyyy HH:mm:ss');
   sheet.getRange('B2').setNumberFormat('@');
-  sheet.getRange('B9').setNumberFormat('@');
+  sheet.getRange('B8:B10').setNumberFormat('@');
   sheet.getRange('B13').setNumberFormat('@');
   sheet.getRange('H:H').setNumberFormat('dd/MM/yyyy HH:mm:ss');
   sheet.getRange('L:L').setNumberFormat('dd/MM/yyyy HH:mm:ss');
