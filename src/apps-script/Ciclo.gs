@@ -9,7 +9,7 @@ const FAGUNDES_CICLO = {
   SHEET: 'Controle Ciclo',
   TOTAL_ESPERADO: 8,
   READY_THRESHOLD: 6,
-  GENERATION_LOCK_MINUTES: 30,
+  GENERATION_LOCK_MINUTES: 240,
   GENERATION_STATUS_PENDING: 'PENDING',
   GENERATION_STATUS_LOCKED: 'LOCKED',
   GENERATION_STATUS_GENERATED: 'GENERATED',
@@ -207,7 +207,7 @@ function lerEstadoCiclo_(sheet) {
     return { summary: summary, cards: cards };
   }
 
-  const summaryValues = sheet.getRange('A1:B16').getValues();
+  const summaryValues = sheet.getRange('A1:B17').getValues();
 
   summaryValues.slice(1).forEach(row => {
     const key = String(row[0] || '').trim();
@@ -323,6 +323,9 @@ function lerEstadoGeracaoCiclo() {
 
   const result = {
     cycle_id: normalizarCycleId_(
+      estado.summary.current_cycle_id || ''
+    ),
+    next_cycle_id: proximoCycleId_(
       estado.summary.current_cycle_id || ''
     ),
     cycle_status: String(estado.summary.cycle_status || ''),
@@ -646,7 +649,7 @@ function marcarGeracaoConcluida(lockToken, generatedCycleId) {
 function atualizarCamposResumoCiclo_(sheet, fields) {
   if (!sheet) throw new Error('Aba Controle Ciclo não encontrada.');
 
-  const maxRows = 16;
+  const maxRows = 17;
   const range = sheet.getRange(1, 1, maxRows, 2);
   const values = range.getValues();
   const rowByKey = {};
@@ -748,6 +751,22 @@ function detectarCicloMaisNovoTrello_(afterCycleId) {
   };
 }
 
+function proximoCycleId_(cycleId) {
+  const current = normalizarCycleId_(cycleId || '');
+  const m = current.match(/^(\d{4})-(\d{2})$/);
+  if (!m) return '';
+
+  let year = Number(m[1]);
+  let month = Number(m[2]) + 1;
+
+  if (month === 13) {
+    month = 1;
+    year++;
+  }
+
+  return year + '-' + String(month).padStart(2, '0');
+}
+
 function normalizarCycleId_(value) {
   if (value instanceof Date && !isNaN(value.getTime())) {
     return Utilities.formatDate(
@@ -811,6 +830,7 @@ function escreverControleCiclo_(sheet, state) {
   const summaryRows = [
     FAGUNDES_CICLO.SUMMARY_HEADERS,
     ['current_cycle_id', state.cycleId || ''],
+    ['next_cycle_id', proximoCycleId_(state.cycleId || '')],
     ['total_cards', state.cards.length],
     ['published_count', state.publishedCount || 0],
     ['ready_threshold', FAGUNDES_CICLO.READY_THRESHOLD],
@@ -870,12 +890,12 @@ function escreverControleCiclo_(sheet, state) {
       .setValues(detailRows);
   }
 
-  sheet.getRange('B7').setNumberFormat('dd/MM/yyyy HH:mm:ss');
-  sheet.getRange('B11:B12').setNumberFormat('dd/MM/yyyy HH:mm:ss');
-  sheet.getRange('B14:B15').setNumberFormat('dd/MM/yyyy HH:mm:ss');
-  sheet.getRange('B2').setNumberFormat('@');
-  sheet.getRange('B8:B10').setNumberFormat('@');
-  sheet.getRange('B13').setNumberFormat('@');
+  sheet.getRange('B8').setNumberFormat('dd/MM/yyyy HH:mm:ss');
+  sheet.getRange('B12:B13').setNumberFormat('dd/MM/yyyy HH:mm:ss');
+  sheet.getRange('B15:B16').setNumberFormat('dd/MM/yyyy HH:mm:ss');
+  sheet.getRange('B2:B3').setNumberFormat('@');
+  sheet.getRange('B9:B11').setNumberFormat('@');
+  sheet.getRange('B14').setNumberFormat('@');
   sheet.getRange('H:H').setNumberFormat('dd/MM/yyyy HH:mm:ss');
   sheet.getRange('L:L').setNumberFormat('dd/MM/yyyy HH:mm:ss');
   sheet.getRange('N:N').setNumberFormat('dd/MM/yyyy HH:mm:ss');
