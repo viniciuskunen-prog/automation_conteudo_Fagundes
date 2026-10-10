@@ -1566,7 +1566,13 @@ function rotinaDiariaFagundes() {
 
   Utilities.sleep(300);
 
-  atualizarControleCiclo();
+  const cycleState = atualizarControleCiclo();
+
+  // Reserva atomicamente a geração para o executor ChatGPT quando 6/8
+  // publicações reais tornam o ciclo READY.
+  if (cycleState && cycleState.status === 'READY') {
+    adquirirLockGeracaoCiclo('chatgpt-automation');
+  }
 
 }
 
